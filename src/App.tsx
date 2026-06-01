@@ -8,33 +8,49 @@ function App() {
   const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
 
   useEffect(() => {
-    client.models.Todo.observeQuery().subscribe({
+    // Real-time listener for database updates
+    const sub = client.models.Todo.observeQuery().subscribe({
       next: (data) => setTodos([...data.items]),
     });
+    return () => sub.unsubscribe();
   }, []);
 
   function createTodo() {
-    client.models.Todo.create({ content: window.prompt("Todo content") });
+    const content = window.prompt("Todo content");
+    if (content) {
+      client.models.Todo.create({ content });
+    }
+  }
+
+  // NEW FUNCTION: Handles item removal from backend
+  function deleteTodo(id: string) {
+    client.models.Todo.delete({ id });
   }
 
   return (
-    <main>
-      <h1>My todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
+    <main style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+      <h1>My To-Do List</h1>
+      <button onClick={createTodo} style={{ marginBottom: "1rem", padding: "0.5rem 1rem" }}>
+        + New Todo
+      </button>
+      
+      <ul style={{ lineHeight: "2" }}>
         {todos.map((todo) => (
-          <li key={todo.id}>{todo.content}</li>
+          <li 
+            key={todo.id} 
+            onClick={() => deleteTodo(todo.id)}
+            style={{ cursor: "pointer", color: "#d9534f" }}
+            title="Click to delete"
+          >
+            {todo.content} ❌
+          </li>
         ))}
       </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-          Review next step of this tutorial.
-        </a>
+      
+      <div style={{ marginTop: "2rem", borderTop: "1px solid #ccc", paddingTop: "1rem" }}>
+        🥳 App successfully hosted! Click an item above to delete it.
       </div>
     </main>
   );
 }
-
 export default App;
